@@ -14,6 +14,9 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QTabWidget,
     QListWidget,
+    QButtonGroup,
+    QRadioButton,
+    QGridLayout,
 )
 from PyQt6.QtCore import Qt
 import warnings
@@ -201,17 +204,65 @@ class SettingsWindow(QWidget):
 
         self.add_line_to_layout(response_layout)
 
-        self.normalization_use_median = QCheckBox("Use median for normalization")
-        self.normalization_use_median.clicked.connect(self.handle_settings_toggle)
-        response_layout.addWidget(self.normalization_use_median)
+        # Normalization settings
 
+        self.normalization_grid = QGridLayout()
+        response_layout.addLayout(self.normalization_grid)
+
+        self.normalization_grid.addWidget(QLabel("Select a mode for normalization"))
+        self.normalization_off = QRadioButton("Do not normalize")
+        self.normalization_off.clicked.connect(self.handle_settings_toggle)
+        self.normalization_grid.addWidget(self.normalization_off, 1, 0)
+        self.normalization_use_mean = QRadioButton("Use mean for normalization")
+        self.normalization_use_mean.clicked.connect(self.handle_settings_toggle)
+        self.normalization_use_median = QRadioButton("Use median for normalization")
+        self.normalization_use_median.clicked.connect(self.handle_settings_toggle)
+        self.normalization_grid.addWidget(self.normalization_use_mean, 1, 1)
+        self.normalization_grid.addWidget(self.normalization_use_median, 2, 1)
+        self.normalization_use_baseline = QRadioButton("Use baseline normalization")
+        self.normalization_use_baseline.clicked.connect(self.handle_settings_toggle)
+        self.normalization_grid.addWidget(self.normalization_use_baseline, 1, 2)
+        self.normalization_group = QButtonGroup(self)
+        self.normalization_group.addButton(self.normalization_off, 10)
+        self.normalization_group.addButton(self.normalization_use_mean, 11)
+        self.normalization_group.addButton(self.normalization_use_median, 12)
+        self.normalization_group.addButton(self.normalization_use_baseline, 13)
+
+        normalization_off_layout = QHBoxLayout()
+        normalization_median_layout = QHBoxLayout()
+        normalization_mean_layout = QHBoxLayout()
+        self.normalization_grid.addLayout(normalization_off_layout, 3, 0)
+        self.normalization_grid.addLayout(normalization_median_layout, 3, 1)
+        self.normalization_grid.addLayout(normalization_mean_layout, 3, 2)
+
+        normalization_off_layout.addStretch()
+
+        normalization_median_layout.addWidget(QLabel("Size of the sliding window:"))
         self.normalization_sliding_window_size = QSpinBox()
         self.normalization_sliding_window_size.setMinimum(2)
         self.normalization_sliding_window_size.setMaximum(200)
-        self.normalization_sliding_window_size.valueChanged.connect(
-            self.handle_settings_toggle
-        )
-        response_layout.addWidget(self.normalization_sliding_window_size)
+        self.normalization_sliding_window_size.valueChanged.connect(self.handle_settings_toggle)
+        normalization_median_layout.addWidget(self.normalization_sliding_window_size)
+        normalization_median_layout.addStretch()
+
+        normalization_mean_layout.addWidget(QLabel("Start frame:"))
+        self.normalization_baseline_start = QSpinBox()
+        self.normalization_baseline_start.setMinimum(0)
+        self.normalization_baseline_start.setMaximum(10000)
+        self.normalization_baseline_start.valueChanged.connect(self.handle_settings_toggle)
+        normalization_mean_layout.addWidget(self.normalization_baseline_start)
+        normalization_mean_layout.addWidget(QLabel("Length:"))
+        self.normalization_baseline_length = QSpinBox()
+        self.normalization_baseline_length.setMinimum(1)
+        self.normalization_baseline_length.setMaximum(500)
+        self.normalization_baseline_length.valueChanged.connect(self.handle_settings_toggle)
+        normalization_mean_layout.addWidget(self.normalization_baseline_length)
+        normalization_mean_layout.addStretch()
+
+        self.add_line_to_layout(response_layout)
+
+        # Other normalization settings
+        
 
         self.normalized_trace_toggle = QCheckBox("Show normalized trace")
         self.normalized_trace_toggle.clicked.connect(self.handle_settings_toggle)
@@ -269,7 +320,30 @@ class SettingsWindow(QWidget):
         self.threshold_wrapper_widget = QWidget()
         self.threshold_wrapper_widget.setLayout(threshold_layout)
 
+        th_frame_subset_layout = QHBoxLayout()
+        threshold_layout.addLayout(th_frame_subset_layout)
+
+        self.th_use_frame_subset = QCheckBox("Use a subset to calculate the baseline")
+        self.th_use_frame_subset.stateChanged.connect(self.handle_settings_toggle)
+        th_frame_subset_layout.addWidget(self.th_use_frame_subset)
+
+        th_frame_subset_layout.addWidget(QLabel("Start frame:"))
+        self.th_subset_start = QSpinBox()
+        self.th_subset_start.setMinimum(0)
+        self.th_subset_start.setMaximum(10000)
+        self.th_subset_start.valueChanged.connect(self.handle_settings_toggle)
+        th_frame_subset_layout.addWidget(self.th_subset_start)
+        th_frame_subset_layout.addWidget(QLabel("Length:"))
+        self.th_subset_length = QSpinBox()
+        self.th_subset_length.setMinimum(1)
+        self.th_subset_length.setMaximum(500)
+        self.th_subset_length.valueChanged.connect(self.handle_settings_toggle)
+        th_frame_subset_layout.addWidget(self.th_subset_length)
+        th_frame_subset_layout.addStretch()
+
         threshold_layout.addStretch()
+
+
 
         # --- stimulation settings ---
 
@@ -391,20 +465,36 @@ class SettingsWindow(QWidget):
         self.patience_input_r.setValue(self.settings.config["stim_frames_patience_r"])
         self.stimframes_input.setText(self.settings.config["stim_frames"])
         self.stim_used_box.setChecked(self.settings.config["stim_used"])
-        self.th_prominence_input.setValue(self.settings.config["threshold_prominence"])
-        self.threshold_input.setValue(self.settings.config["threshold_mult"])
-        self.th_mindistance_input.setValue(self.settings.config["threshold_mindistance"])
-        self.show_threshold.setChecked(self.settings.config["always_show_threshold"])
         self.xlsx_export_box.setChecked(self.settings.config["export_xlsx"])
         self.export_normalized_traces.setChecked(
             self.settings.config["export_normalized_traces"]
         )
-        self.normalization_sliding_window_size.setValue(
-            self.settings.config["normalization_sliding_window_size"]
-        )
-        self.normalization_use_median.setChecked(
-            self.settings.config["normalization_use_median"]
-        )
+
+        # Normalization settings
+        _selected_button = self.normalization_group.button(int(self.settings.config["normalization_mode"]))
+        if _selected_button is None:
+            _selected_button = self.normalization_use_median
+        _selected_button.setChecked(True)
+
+        self.normalization_sliding_window_size.setValue(self.settings.config["normalization_sliding_window_size"])
+
+        baseline_norm_window = self.settings.config["normalization_baseline_window"].split(":")
+        if len(baseline_norm_window) != 2: baseline_norm_window = ["-1", "-1"]
+        baseline_norm_start = int(baseline_norm_window[0])
+        baseline_norm_length = int(baseline_norm_window[1]) - baseline_norm_start
+        self.normalization_baseline_start.setValue(baseline_norm_start)
+        self.normalization_baseline_length.setValue(baseline_norm_length)
+
+        # Detection settings
+
+        #  Local maximum settings
+        self.th_prominence_input.setValue(self.settings.config["threshold_prominence"])
+        self.threshold_input.setValue(self.settings.config["threshold_mult"])
+        self.th_mindistance_input.setValue(self.settings.config["threshold_mindistance"])
+        self.show_threshold.setChecked(self.settings.config["always_show_threshold"])
+        self.th_use_frame_subset.setChecked(self.settings.config["th_use_frame_subset"])
+        self.th_subset_start.setValue(self.settings.config["th_subset_start"])
+        self.th_subset_length.setValue(self.settings.config["th_subset_length"])
 
         self.ml_detection_toggle.setChecked(self.settings.config["ml_detection"])
         self.th_detection_toggle.setChecked(self.settings.config["th_detection"])
@@ -469,10 +559,21 @@ class SettingsWindow(QWidget):
         provide the user set configurations.
         """
         # update all values that might have been changed
+
+        # Local maximum settings
         self.settings.config["threshold_prominence"] = self.th_prominence_input.value()
         self.settings.config["threshold_mult"] = self.threshold_input.value()
         self.settings.config["threshold_mindistance"] = self.th_mindistance_input.value()
         self.settings.config["always_show_threshold"] = self.show_threshold.isChecked()
+        self.settings.config["th_use_frame_subset"] = self.th_use_frame_subset.isChecked()
+        self.settings.config["th_subset_start"] = self.th_subset_start.value()
+        self.settings.config["th_subset_length"] = self.th_subset_length.value()
+
+        self.th_use_frame_subset.setChecked(self.settings.config["th_use_frame_subset"])
+        self.th_subset_start.setValue(self.settings.config["th_subset_start"])
+        self.th_subset_length.setValue(self.settings.config["th_subset_length"])
+
+
         self.settings.config["stim_frames_patience_l"] = self.patience_input_l.value()
         self.settings.config["stim_frames_patience_r"] = self.patience_input_r.value()
         self.settings.config["frames_for_decay"] = self.frames_for_decay.value()
@@ -494,12 +595,15 @@ class SettingsWindow(QWidget):
             "export_normalized_traces"
         ] = self.export_normalized_traces.isChecked()
         self.settings.config["export_xlsx"] = self.xlsx_export_box.isChecked()
+
+        # Normalization settings
+        self.settings.config["normalization_mode"] = self.normalization_group.checkedId()
+        self.settings.config["normalization_sliding_window_size"] = self.normalization_sliding_window_size.value()
         self.settings.config[
-            "normalization_use_median"
-        ] = self.normalization_use_median.isChecked()
-        self.settings.config[
-            "normalization_sliding_window_size"
-        ] = self.normalization_sliding_window_size.value()
+            "normalization_baseline_window"
+        ] = "%i:%i" % (self.normalization_baseline_start.value(), self.normalization_baseline_start.value()+self.normalization_baseline_length.value())
+
+
         self.settings.config[
             "normalized_trace"
         ] = self.normalized_trace_toggle.isChecked()

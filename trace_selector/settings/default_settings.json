@@ -33,10 +33,14 @@
     "frames_for_decay": 6,
     "model_path": "",
     "normalized_trace": true,
-    "normalization_use_median": true,
+    "normalization_mode": 11,
     "normalization_sliding_window_size": 50,
+    "normalization_baseline_window": "0:50",
     "threshold_slider_ml": 50,
     "always_show_threshold": false,
     "th_detection": true,
-    "ml_detection": false
+    "ml_detection": false,
+    "th_use_frame_subset": false,
+    "th_subset_start": 0,
+    "th_subset_length": 50
 }
