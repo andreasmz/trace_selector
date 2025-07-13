@@ -60,8 +60,8 @@ def baseline_normalization(
     """
     t = trace[frame_subset[0]:frame_subset[1]]
     if len(t) == 0: # TODO: Maybe implement here a error handling
-        median = 1
+        mean = 1
     else:
-        median = np.median(t) 
+        mean = np.mean(t) 
 
-    return trace / median
+    return trace / mean
